@@ -1,0 +1,49 @@
+version: '3'
+
+# Define services
+services:
+
+  frontend1:
+    restart: always
+    build: .
+    volumes:
+      - '.:/usr/src/app'
+    expose:
+      - "9000"
+
+  frontend2:
+    restart: always
+    build: .
+    volumes:
+      - '.:/usr/src/app'
+    expose:
+      - "9000"
+
+  nginx:
+    build: nginx
+    container_name: nginx_frontend
+    ports:
+        - "8000:80"
+    links:
+        - frontend1
+        - frontend2
+    depends_on:
+      - frontend1
+      - frontend2
+      - registrator
+
+
+  registrator:
+    image: gliderlabs/registrator:latest
+    container_name: registrator_frontend
+   # build: ./registrator
+   # container_name: registrator
+    environment: # Pass environment variables to the service
+       ETCD_PORT: 2379
+       ETCD_HOST: 167.114.129.188
+    # Tell registrator where the etcd HTTP API is and to use 
+    # the docker VM's IP
+    command: ["-ip", "$HOST_IP", "etcd://167.114.129.188:2379/"]
+    volumes:
+     # So registrator can use the docker API to inspect containers
+    - "/var/run/docker.sock:/tmp/docker.sock"

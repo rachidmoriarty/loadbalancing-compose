@@ -1,0 +1,79 @@
+{{ range gets "/compose_frontend/*" }}
+  {{ $keyval := split (.Key) ":" }}
+  {{ $url :=  (.Value) }} 
+  {{ $app :=  (index $keyval 1) }}
+
+upstream {{ $app }} {
+  server {{ $url }};
+}
+
+server {
+    listen 80;
+    server_name {{  $app }}.gramyup.com;
+    server_name {{  $app  }};
+
+    access_log /var/log/nginx/access.log upstreamlog;
+
+    location / {
+        proxy_pass http://{{ $url }};
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+{{ end }}
+
+{{ range gets "/compose_goapp/*" }}
+  {{ $keyval := split (.Key) ":" }}
+  {{ $url :=  (.Value) }}
+  {{ $app :=  (index $keyval 1) }}
+
+upstream {{ $app }} {
+  server {{ $url }};
+}
+
+server {
+    listen 80;
+    server_name {{  $app }}.gramyup.com;
+    server_name {{  $app  }};
+
+    access_log /var/log/nginx/access.log upstreamlog;
+
+    location / {
+        proxy_pass http://{{ $url }};
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+{{ end }}
+
+
+{{ range gets "/compose_gccapp/*" }}
+  {{ $keyval := split (.Key) ":" }}
+  {{ $url :=  (.Value) }}
+  {{ $app :=  (index $keyval 1) }}
+
+upstream {{ $app }} {
+  server {{ $url }};
+}
+
+server {
+    listen 80;
+    server_name {{  $app }}.gramyup.com;
+    server_name {{  $app  }};
+
+    access_log /var/log/nginx/access.log upstreamlog;
+
+    location / {
+        proxy_pass http://{{ $url }};
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+{{ end }}
+

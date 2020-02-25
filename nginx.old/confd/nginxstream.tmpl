@@ -1,0 +1,23 @@
+
+
+  upstream gccappop {
+  {{ range gets "/compose_gccapp/*" }}
+      {{ $keyval := split (.Key) ":" }}
+      {{ $url :=  (.Value) }}
+      {{ $app :=  (index $keyval 1) }}
+      server {{ $url }};
+  {{ end }}
+  }
+
+
+  map   $http_host $name {
+        gccappop.gramyup.com gccappop;
+
+      }
+
+  server {
+    listen 80;
+    proxy_pass       $name;
+    }
+
+

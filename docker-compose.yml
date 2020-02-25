@@ -1,0 +1,85 @@
+version: '3'
+
+# Define services
+services:
+
+  frontend:
+    restart: always
+    build: ./front
+    container_name: frontend
+    volumes:
+      - '.:/usr/src/app'
+    ports:
+      - "9000:9000"
+    depends_on:
+      - goapp
+    environment:
+      - NODE_ENV=development
+
+
+  # reverse proxy container (nginx)
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - 80:80
+      - 443:443    
+      - 9993:9993
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+#      - ./nginx/conf.d:/etc/nginx/conf.d
+#      - ./nginx/confd:/etc/confd/
+    links:
+      - frontend:frontend
+    environment: # Pass environment variables to the service
+      FRONTEND_URL: frontend:9000
+      NGINX_BACKEND_SERVICE: compose_nginx
+      NGINX_DEMO_DOMAIN: gramyup.com
+      HOST_IP: 167.114.129.188
+      ETCD_PORT: 2379
+    depends_on:
+      - frontend
+      - registrator
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+
+  # go Service
+  goapp:
+    # Configuration for building the docker image for the service
+    build: ./api
+    container_name: goapp
+    ports:
+      - "8080:8080" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
+    depends_on: 
+      - gccapp # This service depends on redis. Start that first.
+    environment: # Pass environment variables to the service
+      GCC_URL: gccapp:9999   
+
+  # gcc Service   
+  gccapp:
+    build: ./server
+    container_name: gccapp
+    ports:
+      - "9999:9999"
+    restart: unless-stopped
+
+  registrator:
+    image: gliderlabs/registrator:latest
+    container_name: registrator
+   # build: ./registrator
+   # container_name: registrator
+    environment: # Pass environment variables to the service
+       ETCD_PORT: 2379
+       ETCD_HOST: 167.114.129.188
+    # Tell registrator where the etcd HTTP API is and to use 
+    # the docker VM's IP
+    command: ["-ip", "$HOST_IP", "etcd://167.114.129.188:2379/"]
+    volumes:
+     # So registrator can use the docker API to inspect containers
+    - "/var/run/docker.sock:/tmp/docker.sock"
